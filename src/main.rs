@@ -2,7 +2,7 @@ use std::io::prelude::*;
 use std::net::TcpStream;
 use std::net::TcpListener;
 
-fn main() {
+pub fn main() {
     let listner = TcpListener::bind("localhost:7878").unwrap();
 
     for stream in listner.incoming() {
@@ -15,19 +15,38 @@ fn main() {
 fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
 
-
     stream.read(&mut buffer).unwrap();
-    let response_info = String::from_utf8_lossy(&buffer[..]);
 
-    stream.write("HTTP/1.1 200 OK\n".as_bytes()).unwrap();
-    stream.write("Content-Type: text/html; charset=UTF-8\n".as_bytes()).unwrap();
-    stream.write("Content-Length: 1000\n\n".as_bytes()).unwrap();
-    let ip = format!("{}", &stream.peer_addr().unwrap());
-    stream.write(ip.as_bytes()).unwrap();
-    stream.write("\n".as_bytes()).unwrap();
-    stream.write("\n".as_bytes()).unwrap();
-    stream.write(response_info.as_bytes()).unwrap();
-    stream.write("\n".as_bytes()).unwrap();
-    stream.write("\n".as_bytes()).unwrap();
+    send_response(&stream, &buffer);
+}
+
+fn send_response(mut stream: &TcpStream, buffer: &[u8; 1024]) {
+    let response_info = String::from_utf8_lossy(&buffer[..]);
+    let ip            = format!("{}", &stream.peer_addr().unwrap());
+
+    let content = format!("<!doctype html><html><head></head><body><h1>request info</h1><h2>remote access ip</h2></div>{}</div><h2>header info</h2><div>{}</div></body></html>\n\n", ip, response_info);
+
+    create_response_header(&stream, &content);
+
+    create_response_content(&stream, &content);
+
     stream.flush().unwrap();
+}
+
+fn create_response_header(mut stream: &TcpStream, content: &String) {
+    stream.write("HTTP/1.1 200 OK\n".as_bytes()).unwrap();
+
+    stream.write("Content-Type: text/html; charset=UTF-8;\n".as_bytes()).unwrap();
+
+    stream.write("Content-Length: ".as_bytes()).unwrap();
+
+    // FIXME refactor converting usize to &[u8]
+    let content_length = format!("{}",content.len());
+    stream.write(content_length.as_bytes()).unwrap();
+
+    stream.write(";\n\n".as_bytes()).unwrap();
+}
+
+fn create_response_content(mut stream: &TcpStream, content: &String) {
+    stream.write(content.as_bytes()).unwrap();
 }
