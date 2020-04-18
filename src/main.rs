@@ -1,14 +1,16 @@
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::net::TcpListener;
+use std::thread;
 
 pub fn main() {
     let listner = TcpListener::bind("localhost:7878").unwrap();
 
     for stream in listner.incoming() {
         let stream = stream.unwrap();
-
-        handle_connection(stream);
+        thread::spawn(move || {
+            handle_connection(stream);
+        });
     }
 }
 
