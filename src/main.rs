@@ -1,3 +1,6 @@
+extern crate chrono;
+
+use chrono::prelude::*;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::net::TcpListener;
@@ -25,8 +28,22 @@ fn handle_connection(mut stream: TcpStream) {
 fn send_response(mut stream: &TcpStream, buffer: &[u8; 1024]) {
     let response_info = String::from_utf8_lossy(&buffer[..]);
     let ip            = format!("{}", &stream.peer_addr().unwrap());
+    let date          = Utc::now().with_timezone(&FixedOffset::east(9 * 3600)).format("%Y年%m月%d日 %H時%M分%S秒");
 
-    let content = format!("<!doctype html><html><head></head><body><h1>request info</h1><h2>remote access ip</h2></div>{}</div><h2>header info</h2><div>{}</div></body></html>\n\n", ip, response_info);
+    let content = format!("<!doctype html>
+                           <html>
+                                <head></head>
+                                <body>
+                                    <h1>request info</h1>
+                                    <h2>remote access address</h2>
+                                    </div>{}</div>
+                                    <h2>request date</h2>
+                                    <div>{}</div>
+                                    <h2>header info</h2>
+                                    <div>{}</div>
+                                </body>
+                           </html>\n\n",
+                           ip, date, response_info);
 
     create_response_header(&stream, &content);
 
