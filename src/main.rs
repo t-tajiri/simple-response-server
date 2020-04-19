@@ -2,8 +2,8 @@ extern crate chrono;
 
 use chrono::prelude::*;
 use std::io::prelude::*;
-use std::net::TcpStream;
 use std::net::TcpListener;
+use std::net::TcpStream;
 use std::thread;
 
 pub fn main() {
@@ -27,10 +27,13 @@ fn handle_connection(mut stream: TcpStream) {
 
 fn send_response(mut stream: &TcpStream, buffer: &[u8; 1024]) {
     let response_info = String::from_utf8_lossy(&buffer[..]);
-    let ip            = format!("{}", &stream.peer_addr().unwrap());
-    let date          = Utc::now().with_timezone(&FixedOffset::east(9 * 3600)).format("%Y年%m月%d日 %H時%M分%S秒");
+    let ip = format!("{}", &stream.peer_addr().unwrap());
+    let date = Utc::now()
+        .with_timezone(&FixedOffset::east(9 * 3600))
+        .format("%Y年%m月%d日 %H時%M分%S秒");
 
-    let content = format!("<!doctype html>
+    let content = format!(
+        "<!doctype html>
                            <html>
                                 <head></head>
                                 <body>
@@ -43,7 +46,8 @@ fn send_response(mut stream: &TcpStream, buffer: &[u8; 1024]) {
                                     <div>{}</div>
                                 </body>
                            </html>\n\n",
-                           ip, date, response_info);
+        ip, date, response_info
+    );
 
     create_response_header(&stream, &content);
 
@@ -55,12 +59,14 @@ fn send_response(mut stream: &TcpStream, buffer: &[u8; 1024]) {
 fn create_response_header(mut stream: &TcpStream, content: &String) {
     stream.write("HTTP/1.1 200 OK\n".as_bytes()).unwrap();
 
-    stream.write("Content-Type: text/html; charset=UTF-8;\n".as_bytes()).unwrap();
+    stream
+        .write("Content-Type: text/html; charset=UTF-8;\n".as_bytes())
+        .unwrap();
 
     stream.write("Content-Length: ".as_bytes()).unwrap();
 
     // FIXME refactor converting usize to &[u8]
-    let content_length = format!("{}",content.len());
+    let content_length = format!("{}", content.len());
     stream.write(content_length.as_bytes()).unwrap();
 
     stream.write(";\n\n".as_bytes()).unwrap();
